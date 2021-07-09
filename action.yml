@@ -1,0 +1,9 @@
+name: 'Mark expired issues as stale'
+description: 'This is an Action that adds "stale" label to issues not responded for a long term'
+author: 'YUKI "Piro" Hiroshi'
+branding:
+  icon: 'archive'
+  color: 'gray-dark'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
