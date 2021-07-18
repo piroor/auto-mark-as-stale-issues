@@ -29,4 +29,5 @@ jobs:
         CANDIDATE_LABELS: help wanted
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         EXPIRE_DAYS: 30
+        COMMENT: This issue has been labeled as "stale" due to no response in 30 days.
 ```

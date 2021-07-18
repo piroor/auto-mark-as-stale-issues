@@ -4,6 +4,7 @@ repo = ENV["GITHUB_REPOSITORY"]
 label_to_be_added = ENV["LABEL"] || "stale"
 candidate_labels = (ENV["CANDIDATE_LABELS"] || "").split(",").collect{|label| label.strip }
 expire_days = ENV["EXPIRE_DAYS"] || 0
+comment = ENV["COMMENT"] || "This issue has been labeled as \"#{label_to_be_added}\" due to no response in #{expire_days} days."
 
 client = Octokit::Client.new(:access_token => ENV["GITHUB_TOKEN"])
 client.auto_paginate = true
@@ -27,6 +28,7 @@ open_issues.each do |issue|
   if past_seconds > expire_days_in_seconds
     p " => stale"
     client.add_labels_to_an_issue(repo, issue.number, [label_to_be_added])
+    client.add_comment(repo, issue.number, comment)
   else
     p " => not stale yet"
   end
