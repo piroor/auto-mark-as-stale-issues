@@ -24,7 +24,10 @@ open_issues.each do |issue|
     p " => already marked"
     next
   end
-  past_seconds = now - issue.updated_at.to_i
+  timeline = client.issue_timeline(repo, issue.number)
+  last_commented_event = timeline.select{|event| event.event == "commented" }.last
+
+  past_seconds = now - [issue.updated_at.to_i, last_commented_event.created_at.to_i].max
   if past_seconds > expire_days_in_seconds
     p " => stale"
     client.add_labels_to_an_issue(repo, issue.number, [label_to_be_added])
