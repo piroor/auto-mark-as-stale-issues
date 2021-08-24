@@ -4,7 +4,8 @@ repo = ENV["GITHUB_REPOSITORY"]
 label_to_be_added = ENV["LABEL"] || "stale"
 candidate_labels = (ENV["CANDIDATE_LABELS"] || "").split(",").collect{|label| label.strip }
 expire_days = ENV["EXPIRE_DAYS"] || 0
-comment = ENV["COMMENT"] || "This issue has been labeled as \"#{label_to_be_added}\" due to no response in #{expire_days} days."
+extend_days_by_commented = ENV["EXTEND_DAYS_BY_COMMENTED"] || expire_days
+comment = ENV["COMMENT"] || "This issue has been labeled as \"#{label_to_be_added}\" due to no response by the reporter within #{expire_days} days (and #{extend_days_by_commented} days after last commented by someone)."
 
 client = Octokit::Client.new(:access_token => ENV["GITHUB_TOKEN"])
 client.auto_paginate = true
@@ -16,6 +17,7 @@ p " => #{open_issues.size} issues found"
 
 now = Time.new.to_i
 expire_days_in_seconds = expire_days.to_i * 60 * 60 * 24
+extend_days_by_commented_in_seconds = extend_days_by_commented.to_i * 60 * 60 * 24
 
 p "Checking issues with expire days #{expire_days}"
 open_issues.each do |issue|
@@ -25,14 +27,20 @@ open_issues.each do |issue|
     next
   end
   timeline = client.issue_timeline(repo, issue.number)
-  last_commented_event = timeline.select{|event| event.event == "commented" }.last
 
-  past_seconds = now - [issue.updated_at.to_i, last_commented_event.created_at.to_i].max
-  if past_seconds > expire_days_in_seconds
-    p " => stale"
-    client.add_labels_to_an_issue(repo, issue.number, [label_to_be_added])
-    client.add_comment(repo, issue.number, comment)
-  else
-    p " => not stale yet"
+  reporter_id = issue.user.id
+  reporter_last_commented_event = timeline.select{|event| event.event == "commented" and event.user.id == reporter_id }.last
+  if reporter_last_commented_event and now - reporter_last_commented_event.created_at.to_i <= expire_days_in_seconds
+    p " => not stale yet (from reporter's last comment)"
   end
+
+  last_commented_event = timeline.select{|event| event.event == "commented" and event.user.type != "Bot" }.last
+  if last_commented_event and now - last_commented_event.created_at.to_i <= extend_days_by_commented_in_seconds
+    p " => not stale yet (from last commented by someone)"
+    next
+  end
+
+  p " => stale"
+  client.add_labels_to_an_issue(repo, issue.number, [label_to_be_added])
+  client.add_comment(repo, issue.number, comment)
 end
