@@ -32,6 +32,7 @@ open_issues.each do |issue|
   reporter_last_commented_event = timeline.select{|event| event.event == "commented" and event.user.id == reporter_id }.last
   if reporter_last_commented_event and now - [issue.created_at.to_i, reporter_last_commented_event.created_at.to_i].max <= expire_days_in_seconds
     p " => not stale yet (from reporter's last comment)"
+    next
   end
 
   last_commented_event = timeline.select{|event| event.event == "commented" and event.user.type != "Bot" }.last
