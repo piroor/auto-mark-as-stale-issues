@@ -3,6 +3,7 @@ require 'octokit'
 repo = ENV["GITHUB_REPOSITORY"]
 label_to_be_added = ENV["LABEL"] || "stale"
 candidate_labels = (ENV["CANDIDATE_LABELS"] || "").split(",").collect{|label| label.strip }
+exception_labels = (ENV["EXCEPTION_LABELS"] || "").split(",").collect{|label| label.strip }
 expire_days = ENV["EXPIRE_DAYS"] || 0
 extend_days_by_commented = ENV["EXTEND_DAYS_BY_COMMENTED"] || expire_days
 comment = ENV["COMMENT"] || "This issue has been labeled as \"#{label_to_be_added}\" due to no response by the reporter within #{expire_days} days (and #{extend_days_by_commented} days after last commented by someone)."
@@ -19,11 +20,15 @@ now = Time.new.to_i
 expire_days_in_seconds = expire_days.to_i * 60 * 60 * 24
 extend_days_by_commented_in_seconds = extend_days_by_commented.to_i * 60 * 60 * 24
 
-p "Checking issues with expire days #{expire_days}"
+p "Checking issues with expire days #{expire_days} and exception labels #{exception_labels.join(", ")}"
 open_issues.each do |issue|
   p "Issue #{issue.number} (#{issue.labels.collect{|label| label.name }.join(", ")})"
   if issue.labels.any?{|label| label.name == label_to_be_added }
     p " => already marked"
+    next
+  end
+  if not exception_labels.empty? and issue.labels.any?{|label| exception_labels.any?(label.name) }
+    p " => has one of exceptions #{exception_labels.join(", ")}"
     next
   end
   timeline = client.issue_timeline(repo, issue.number)

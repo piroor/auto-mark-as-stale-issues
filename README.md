@@ -9,6 +9,7 @@ This action takes four parameters via environment variables.
 * `EXPIRE_DAYS` (integer, default = `0`): The number of days waiting to mark issues after the last comment done by the reporter.
 * `EXTEND_DAYS_BY_COMMENTED` (integer, default = same to `EXPIRE_DAYS`): The number of days waiting to mark issues after last commented by someone.
 * `CANDIDATE_LABELS` (commma separated strings): Names of labels which filter issues to be marked as stale.
+* `EXCEPTION_LABELS` (commma separated strings): Names of labels which block marking as stale.
 * `GITHUB_TOKEN (string): This must be `${{ secrets.GITHUB_TOKEN }}`.
 
 For example:
@@ -27,6 +28,7 @@ jobs:
       uses: piroor/auto-mark-as-stale-issues
       env:
         LABEL: stale
+        EXCEPTION_LABELS: needs-triage
         CANDIDATE_LABELS: help wanted
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         EXPIRE_DAYS: 30
